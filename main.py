@@ -23,7 +23,7 @@ def main():
     # switch red and blue color channels 
     # --> by default OpenCV assumes BLUE comes first, not RED as in many images
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
+    print("image shape = ", image.shape)
     # plot the image
     fig = plt.figure(figsize=(9,9))
     plt.imshow(image)
@@ -61,26 +61,7 @@ def main():
     # retreive the saved model
     net_state_dict = torch.load(model_dir+model_name)
     net.load_state_dict(net_state_dict)
-    net.eval()
-    
-    # load the test data
-    test_dataset = FacialKeypointsDataset(csv_file='../files/test_frames_keypoints.csv',
-                                                root_dir='../files/test/',
-                                                transform=data_transform)
-    # load test data in batches
-    test_loader = DataLoader(test_dataset, 
-                            batch_size=Hyp.batch_size,
-                            shuffle=True, 
-                            num_workers=0)
-
-    test_images, test_outputs, gt_pts = net_sample_output(test_loader, net)   
-
-    # print out the dimensions of the data to see if they make sense
-    print(test_images.data.size())
-    print(test_outputs.data.size())
-    print(gt_pts.size())
-    image = test_images[0]
-    faces = get_faces(image)
+    print(net.eval())
     image_copy = np.copy(image)
 
     # loop over the detected faces from your haar cascade
@@ -90,17 +71,25 @@ def main():
         roi = image_copy[y:y+h, x:x+w]
         
         ## TODO: Convert the face region from RGB to grayscale
-
+        roi = cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY)
         ## TODO: Normalize the grayscale image so that its color range falls in [0,1] instead of [0,255]
-        
+        roi =  roi/255.0
         ## TODO: Rescale the detected face to be the expected square size for your CNN (224x224, suggested)
-        
+        roi = cv2.resize(roi, (224, 224))
         ## TODO: Reshape the numpy image shape (H x W x C) into a torch image shape (C x H x W)
-        
+        image_reshape = torch.from_numpy(image.transpose((2, 0, 1)))
         ## TODO: Make facial keypoint predictions using your loaded, trained network 
         ## perform a forward pass to get the predicted facial keypoints
-
+        keypoints = net.forward(image_reshape)
         ## TODO: Display each detected face and the corresponding keypoints                             
+        show_keypoints(image_reshape, keypoints)
+
+# helper function to display keypoints
+def show_keypoints(image, key_pts):
+    """Show image with keypoints"""
+    plt.imshow(image)
+    plt.scatter(key_pts[:, 0], key_pts[:, 1], s=20, marker='.', c='m')
+    plt.show()
 
 def net_sample_output(test_loader, net):
     
