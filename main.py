@@ -51,16 +51,11 @@ def main():
     net = Net2()
     model_dir = '../saved_models/'
     model_name = 'keypoints_model_2.pt'
-    data_transform = transforms.Compose([
-        Rescale(256),
-        RandomCrop(224),
-        Normalize(),
-        ToTensor()
-    ])
 
     # retreive the saved model
     net_state_dict = torch.load(model_dir+model_name)
     net.load_state_dict(net_state_dict)
+    net = net.float()
     print(net.eval())
     image_copy = np.copy(image)
 
@@ -75,20 +70,23 @@ def main():
         ## TODO: Normalize the grayscale image so that its color range falls in [0,1] instead of [0,255]
         roi =  roi/255.0
         ## TODO: Rescale the detected face to be the expected square size for your CNN (224x224, suggested)
-        roi = cv2.resize(roi, (224, 224))
+        face_image = cv2.resize(roi, (224, 224))
+        """ plt.imshow(face_image)
+        plt.show() """
         ## TODO: Reshape the numpy image shape (H x W x C) into a torch image shape (C x H x W)
-        image_reshape = torch.from_numpy(image.transpose((2, 0, 1)))
+        roi_resize = face_image.reshape(face_image.shape[0], face_image.shape[1], 1)
+        roi_reshape = torch.from_numpy(roi_resize.transpose((2, 0, 1)))
         ## TODO: Make facial keypoint predictions using your loaded, trained network 
         ## perform a forward pass to get the predicted facial keypoints
-        keypoints = net.forward(image_reshape)
+        keypoints = net.forward(roi_reshape.unsqueeze(0).float())
         ## TODO: Display each detected face and the corresponding keypoints                             
-        show_keypoints(image_reshape, keypoints)
+        show_keypoints(face_image, keypoints.detach().numpy())
 
 # helper function to display keypoints
-def show_keypoints(image, key_pts):
+def show_keypoints(image, keypoints):
     """Show image with keypoints"""
     plt.imshow(image)
-    plt.scatter(key_pts[:, 0], key_pts[:, 1], s=20, marker='.', c='m')
+    plt.scatter(keypoints[:, 0], keypoints[:, 1], s=20, marker='.', c='m')
     plt.show()
 
 def net_sample_output(test_loader, net):
