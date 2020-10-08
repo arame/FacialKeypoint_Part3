@@ -64,7 +64,6 @@ def main():
         
         # Select the region of interest that is the face in the image 
         roi = image_copy[y:y+h, x:x+w]
-        roi_copy = np.copy(roi)
         ## TODO: Convert the face region from RGB to grayscale
         roi = cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY)
         ## TODO: Normalize the grayscale image so that its color range falls in [0,1] instead of [0,255]
@@ -84,7 +83,7 @@ def main():
         keypoints = keypoints.data.numpy() #convert back to numpy
         keypoints = keypoints*50.0 + 100  #undo normalization of
         ## TODO: Display each detected face and the corresponding keypoints                             
-        show_keypoints(roi_copy, keypoints)
+        show_keypoints(face_image, keypoints)
 
 # helper function to display keypoints
 def show_keypoints(image, keypoints):
