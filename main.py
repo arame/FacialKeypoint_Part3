@@ -46,7 +46,7 @@ def main():
     fig = plt.figure(figsize=(9,9))
 
     plt.imshow(image_with_detections)
-    #plt.show()
+    plt.show()
     # -------- Load model
     net = Net2()
     model_dir = '../saved_models/'
@@ -64,7 +64,7 @@ def main():
         
         # Select the region of interest that is the face in the image 
         roi = image_copy[y:y+h, x:x+w]
-        
+        roi_copy = np.copy(roi)
         ## TODO: Convert the face region from RGB to grayscale
         roi = cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY)
         ## TODO: Normalize the grayscale image so that its color range falls in [0,1] instead of [0,255]
@@ -79,13 +79,18 @@ def main():
         ## TODO: Make facial keypoint predictions using your loaded, trained network 
         ## perform a forward pass to get the predicted facial keypoints
         keypoints = net.forward(roi_reshape.unsqueeze(0).float())
+        keypoints = keypoints.view(68, 2)
+        # Undo the transformations performed on the facial keypoints
+        keypoints = keypoints.data.numpy() #convert back to numpy
+        keypoints = keypoints*50.0 + 100  #undo normalization of
         ## TODO: Display each detected face and the corresponding keypoints                             
-        show_keypoints(face_image, keypoints.detach().numpy())
+        show_keypoints(roi_copy, keypoints)
 
 # helper function to display keypoints
 def show_keypoints(image, keypoints):
     """Show image with keypoints"""
-    plt.imshow(image)
+    # image is grayscale
+    plt.imshow(image, cmap='gray')
     plt.scatter(keypoints[:, 0], keypoints[:, 1], s=20, marker='.', c='m')
     plt.show()
 
